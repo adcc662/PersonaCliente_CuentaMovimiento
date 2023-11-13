@@ -1,0 +1,49 @@
+version: '3.8'
+services:
+  cuentamovimiento-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - cuentamovimiento-postgres
+      - cuentamovimiento-kafka
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://cuentamovimiento-postgres:5432/cuenta_movimiento
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: cuentamovimiento-kafka:9092
+
+  cuentamovimiento-postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: cuenta_movimiento
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5434:5432"
+    volumes:
+      - cuentamovimiento_db_data:/var/lib/postgresql/data
+
+  cuentamovimiento-kafka:
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - "9094:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: cuentamovimiento-zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://cuentamovimiento-kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - cuentamovimiento-zookeeper
+
+  cuentamovimiento-zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    ports:
+      - "2182:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+volumes:
+  cuentamovimiento_db_data:
